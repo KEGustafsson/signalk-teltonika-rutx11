@@ -1,5 +1,5 @@
 {
-  "name": "@meri-imperiumi/signalk-teltonika-modem1",
+  "name": "@meri-imperiumi/signalk-teltonika-modem2",
   "version": "0.2.0",
   "description": "Signal K plugin that retrieves status from a Teltonika RUTX11 modem via Modbus",
   "main": "index.js",

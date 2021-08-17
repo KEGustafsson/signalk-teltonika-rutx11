@@ -28,8 +28,8 @@ function getData(address, quantity, options) {
 
 module.exports = function createPlugin(app) {
   const plugin = {};
-  plugin.id = 'signalk-teltonika-modem1';
-  plugin.name = 'Teltonika Modem 1 status';
+  plugin.id = 'signalk-teltonika-modem2';
+  plugin.name = 'Teltonika Modem 2 status';
   plugin.description = 'Plugin that retrieves status from a Teltonika RUTX11 modem via Modbus';
 
   let timeout = null;
@@ -43,32 +43,32 @@ module.exports = function createPlugin(app) {
       .then((data) => {
         const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
         values.push({
-          path: 'networking.modem1.uptime',
+          path: 'networking.modem2.uptime',
           value: modemUptime,
         });
         const signalStrength = Buffer.concat(data.slice(2, 5)).readInt32BE();
         values.push({
-          path: 'networking.modem1.lte.rssi',
+          path: 'networking.modem2.lte.rssi',
           value: signalStrength,
         });
         const signalBars = Math.min(Math.floor((signalStrength + 100) / 8), 5);
         values.push({
-          path: 'networking.modem1.lte.bars',
+          path: 'networking.modem2.lte.bars',
           value: signalBars,
         });
         const radioQuality = Math.min((signalStrength + 100) / 8, 5) / 5;
         values.push({
-          path: 'networking.modem1.lte.radioQuality',
+          path: 'networking.modem2.lte.radioQuality',
           value: radioQuality,
         });
         const modemTemperature = Buffer.concat(data.slice(4, 7)).readInt32BE() / 10;
         values.push({
-          path: 'networking.modem1.temperature',
+          path: 'networking.modem2.temperature',
           value: modemTemperature,
         });
         const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
         values.push({
-          path: 'networking.modem1.lte.registerNetworkDisplay',
+          path: 'networking.modem2.lte.registerNetworkDisplay',
           value: operator,
         });
         app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
@@ -77,7 +77,7 @@ module.exports = function createPlugin(app) {
       .then((data) => {
         const connectionType = Buffer.concat(data.slice(0, 15)).toString().replace(/\0.*$/g, '');
         values.push({
-          path: 'networking.modem1.lte.connectionText',
+          path: 'networking.modem2.lte.connectionText',
           value: connectionType,
         });
         return getData(135, 4, options);
@@ -87,11 +87,11 @@ module.exports = function createPlugin(app) {
         const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
         values.push(
           {
-          path: 'networking.modem1.lte.usage.tx',
+          path: 'networking.modem2.lte.usage.tx',
           value: tx,
           },
           {
-          path: 'networking.modem1.lte.usage.rx',
+          path: 'networking.modem2.lte.usage.rx',
           value: rx,
           }
         );
