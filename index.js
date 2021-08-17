@@ -80,18 +80,7 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.connectionText',
           value: connectionType,
         });
-        return getData(87, 16, options);
-      })
-      .then((data) => {
-        const activeSim = Buffer.concat(data.slice(0, 15)).toString();
-        switch (activeSim.slice(0, 4)) {
-          case 'sim2': {
-            return getData(300, 4, options);
-          }
-          default: {
-            return getData(185, 4, options);
-          }
-        }
+        return getData(135, 4, options);
       })
       .then((data) => {
         const rx = Buffer.concat([data[0], data[1]]).readUInt32BE();
