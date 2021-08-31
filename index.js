@@ -79,6 +79,11 @@ module.exports = function createPlugin(app) {
           path: 'networking.modem.temperature',
           value: modemTemperature,
         });
+        const hostName = Buffer.concat(data.slice(6, 23)).toString().replace(/\0.*$/g, '');
+        values.push({
+          path: 'networking.modem.hostname',
+          value: hostName,
+        });
         const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
         values.push({
           path: 'networking.lte.registerNetworkDisplay',
@@ -123,6 +128,42 @@ module.exports = function createPlugin(app) {
           value: rx,
           }
         );
+        return getData(139, 2, options);
+      })
+      .then((data) => {
+        const ip = Buffer.concat([data[0], data[1]]).readUInt32BE();
+        function intToIP(int) {
+          var part1 = int & 255;
+          var part2 = ((int >> 8) & 255);
+          var part3 = ((int >> 16) & 255);
+          var part4 = ((int >> 24) & 255);
+          return part4 + "." + part3 + "." + part2 + "." + part1;
+        }
+        const wanIp = intToIP(ip);
+        values.push(
+          {
+            path: 'networking.lte.wanip',
+            value: wanIp,
+          }  
+        );
+        return getData(1024, 7, options);
+      })
+      .then((data) => {
+        const rsrp = parseInt(Buffer.concat(data.slice(0, 2)).toString(), 10);
+        values.push({
+          path: 'networking.lte.rsrp',
+          value: rsrp,
+        });
+        const rsrq = parseFloat(Buffer.concat(data.slice(2, 4)).toString(), 10);
+        values.push({
+          path: 'networking.lte.rsrq',
+          value: rsrq,
+        });
+        const sinr = parseFloat(Buffer.concat(data.slice(4, 7)).toString(), 10);
+        values.push({
+          path: 'networking.lte.sinr',
+          value: sinr,
+        });
       })
       .then(() => {
         app.handleMessage(plugin.id, {
