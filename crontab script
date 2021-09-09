@@ -1,0 +1,11 @@
+#Modem ModBus extension
+* * * * * /root/modem_modbus
+
+/root/modbus -script
+
+#!/bin/sh
+/usr/sbin/gsmctl -W > /tmp/regfile
+/usr/sbin/gsmctl -M >> /tmp/regfile
+/usr/sbin/gsmctl -Z >> /tmp/regfile
+
+chmod +x /root/modbus
