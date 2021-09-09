@@ -95,6 +95,19 @@ module.exports = function createPlugin(app) {
           value: rx,
           }
         );
+        return getData(1024, 4, options);
+      })
+      .then((data) => {
+        const rsrp = parseInt(Buffer.concat(data.slice(0, 2)).toString(), 10);
+        values.push({
+          path: 'networking.modem1.lte.rsrp',
+          value: rsrp,
+        });
+        const rsrq = parseFloat(Buffer.concat(data.slice(2, 4)).toString(), 10);
+        values.push({
+          path: 'networking.modem1.lte.rsrq',
+          value: rsrq,
+        });
       })
       .then(() => {
         app.handleMessage(plugin.id, {
