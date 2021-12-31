@@ -1,6 +1,8 @@
 const modbus = require('modbus-stream');
 
 function getData(address, quantity, options) {
+//  console.log(address);
+//  console.log(quantity);
   return new Promise((resolve, reject) => {
     modbus.tcp.connect(options.port, options.ip, {
       debug: null,
@@ -17,6 +19,8 @@ function getData(address, quantity, options) {
         quantity,
       }, (readErr, res) => {
         if (readErr) {
+          console.log("Addr: ", address);
+          console.log("Num: ", quantity);
           reject(err);
           return;
         }
@@ -29,18 +33,36 @@ function getData(address, quantity, options) {
 module.exports = function createPlugin(app) {
   const plugin = {};
   plugin.id = 'signalk-teltonika-rutx11';
-  plugin.name = 'Teltonika RUTX11 status';
-  plugin.description = 'Plugin that retrieves status from a Teltonika RUTX11 modem via Modbus';
+  plugin.name = 'Teltonika Modem Modbus';
+  plugin.description = 'Plugin that retrieves status from a Teltonika RUT modem via Modbus';
 
   let timeout = null;
   plugin.start = function start(options) {
     app.setPluginStatus('Initializing');
+    plugin.setMeta();
     plugin.fetchStatus(options);
+  };
+  plugin.setMeta = function setMeta() {
+    app.handleMessage(plugin.id, {
+      context: `vessels.${app.selfId}`,
+      updates: [
+        {
+          meta: [
+              { path: 'networking.modem.temperature', value: { units: 'K' } },
+          ]
+        }
+      ]
+    })
   };
   plugin.fetchStatus = function fetchStatus(options) {
     const values = [];
     getData(1, 38, options)
       .then((data) => {
+        const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
+        values.push({
+          path: 'networking.modem.uptime',
+          value: modemUptime,
+        });
         const signalStrength = Buffer.concat(data.slice(2, 5)).readInt32BE();
         values.push({
           path: 'networking.lte.rssi',
@@ -55,6 +77,16 @@ module.exports = function createPlugin(app) {
         values.push({
           path: 'networking.lte.radioQuality',
           value: radioQuality,
+        });
+        const modemTemperature = Buffer.concat(data.slice(4, 7)).readInt32BE() / 10 + 273.15;
+        values.push({
+          path: 'networking.modem.temperature',
+          value: modemTemperature,
+        });
+        const hostName = Buffer.concat(data.slice(6, 23)).toString().replace(/\0.*$/g, '');
+        values.push({
+          path: 'networking.modem.hostname',
+          value: hostName,
         });
         const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
         values.push({
@@ -79,16 +111,62 @@ module.exports = function createPlugin(app) {
             return getData(300, 4, options);
           }
           default: {
-            return getData(185, 4, options);
+            if (options.RUT240) {
+              return getData(135, 4, options);  
+            } else {
+              return getData(185, 4, options);
+            }
           }
         }
       })
       .then((data) => {
-        const tx = Buffer.concat([data[0], data[1]]).readUInt32BE();
-        const rx = Buffer.concat([data[2], data[3]]).readUInt32BE();
+        const rx = Buffer.concat([data[0], data[1]]).readUInt32BE();
+        const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
+        values.push(
+          {
+          path: 'networking.lte.usage.tx',
+          value: tx,
+          },
+          {
+          path: 'networking.lte.usage.rx',
+          value: rx,
+          }
+        );
+        return getData(139, 2, options);
+      })
+      .then((data) => {
+        const ip = Buffer.concat([data[0], data[1]]).readUInt32BE();
+        function intToIP(int) {
+          var part1 = int & 255;
+          var part2 = ((int >> 8) & 255);
+          var part3 = ((int >> 16) & 255);
+          var part4 = ((int >> 24) & 255);
+          return part4 + "." + part3 + "." + part2 + "." + part1;
+        }
+        const wanIp = intToIP(ip);
+        values.push(
+          {
+            path: 'networking.lte.wanip',
+            value: wanIp,
+          }  
+        );
+        return getData(1024, 8, options);
+      })
+      .then((data) => {
+        const rsrp = parseInt(Buffer.concat(data.slice(0, 3)).toString(), 10);
         values.push({
-          path: 'networking.lte.usage',
-          value: tx + rx,
+          path: 'networking.lte.rsrp',
+          value: rsrp,
+        });
+        const rsrq = parseFloat(Buffer.concat(data.slice(3, 5)).toString(), 10);
+        values.push({
+          path: 'networking.lte.rsrq',
+          value: rsrq,
+        });
+        const band = parseFloat(Buffer.concat(data.slice(5, 8)).toString(), 10);
+        values.push({
+          path: 'networking.lte.band',
+          value: band,
         });
       })
       .then(() => {
@@ -123,16 +201,22 @@ module.exports = function createPlugin(app) {
 
   plugin.schema = {
     type: 'object',
+    description: 'For Teltonika RUT240, 360, 950, 955, X9, X11, X14 modems',
     properties: {
+      RUT240: {
+        type: 'boolean',
+        title: 'Select only in case using RUT240',
+        default: false
+      },
       ip: {
         type: 'string',
         default: '192.168.1.1',
-        title: 'RUTX11 IP address',
+        title: 'Modem IP address',
       },
       port: {
         type: 'integer',
         default: 502,
-        title: 'RUTX11 Modbus port (note: Modbus must be enabled on the router)',
+        title: 'Modem Modbus port (note: Modbus must be enabled on the router)',
       },
       interval: {
         type: 'integer',
