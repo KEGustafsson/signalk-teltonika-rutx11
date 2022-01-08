@@ -150,7 +150,7 @@ module.exports = function createPlugin(app) {
             value: wanIp,
           }  
         );
-        return getData(1024, 8, options);
+        return getData(1024, 12, options);
       })
       .then((data) => {
         const rsrp = parseInt(Buffer.concat(data.slice(0, 3)).toString(), 10);
@@ -167,6 +167,11 @@ module.exports = function createPlugin(app) {
         values.push({
           path: 'networking.lte.band',
           value: band,
+        });
+        const cellId = parseFloat(Buffer.concat(data.slice(8, 12)).toString(), 10);
+        values.push({
+          path: 'networking.lte.cellid',
+          value: cellId,
         });
       })
       .then(() => {
