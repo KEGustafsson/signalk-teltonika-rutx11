@@ -170,9 +170,9 @@ module.exports = function createPlugin(app) {
           ],
         });
       })
-      .catch((err) => {
-        app.setPluginError(err.message);
-      });
+//      .catch((err) => {
+//        app.setPluginError(err.message);
+//      });
 
     timeout = setTimeout(() => {
       plugin.fetchStatus(options);
