@@ -12,16 +12,21 @@ function getData(address, quantity, options) {
       connection.once('error', (connErr) => {
         reject(connErr);
       });
-      connection.readHoldingRegisters({
-        address,
-        quantity,
-      }, (readErr, res) => {
-        if (readErr) {
-          reject(err);
-          return;
-        }
-        resolve(res.response.data);
-      });
+      try {
+        connection.readHoldingRegisters({
+          address,
+          quantity,
+        }, (readErr, res) => {
+          if (readErr) {
+            console.log("Addr: ", address);
+            console.log("Num: ", quantity);
+            return;
+          }
+          resolve(res.response.data);
+        });
+      } catch (error) {
+        console.error(error)
+      }
     });
   });
 }
