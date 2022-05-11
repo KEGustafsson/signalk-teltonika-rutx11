@@ -57,7 +57,7 @@ module.exports = function createPlugin(app) {
   };
   plugin.fetchStatus = function fetchStatus(options) {
     const values = [];
-    getData(1, 38, options)
+    getData(1, 22, options)
       .then((data) => {
         const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
         values.push({
@@ -84,12 +84,14 @@ module.exports = function createPlugin(app) {
           path: 'networking.modem.temperature',
           value: modemTemperature,
         });
-        const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
+/*
+      const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
         values.push({
           path: 'networking.lte.registerNetworkDisplay',
           value: operator,
         });
         app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
+*/
         return getData(119, 16, options);
       })
       .then((data) => {
