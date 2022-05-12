@@ -87,8 +87,8 @@ module.exports = function createPlugin(app) {
         return getData(23, 16, options);
       })
       .then((data) => {
-        console.log(Buffer.concat(data).toString('hex'));
-        console.log(Buffer.concat(data).toString());
+        console.log("RUT: ",Buffer.concat(data).toString('hex'));
+        console.log("RUT: ",Buffer.concat(data).toString());
         return getData(119, 16, options);
       })
       .then((data) => {
