@@ -84,14 +84,11 @@ module.exports = function createPlugin(app) {
           path: 'networking.modem.temperature',
           value: modemTemperature,
         });
-/*
-      const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
-        values.push({
-          path: 'networking.lte.registerNetworkDisplay',
-          value: operator,
-        });
-        app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
-*/
+        return getData(23, 16, options);
+      })
+      .then((data) => {
+        console.log(Buffer.concat(data).toString('hex'));
+        console.log(Buffer.concat(data).toString());
         return getData(119, 16, options);
       })
       .then((data) => {
@@ -172,9 +169,9 @@ module.exports = function createPlugin(app) {
           ],
         });
       })
-//      .catch((err) => {
-//        app.setPluginError(err.message);
-//      });
+      .catch((err) => {
+        app.setPluginError(err.message);
+      });
 
     timeout = setTimeout(() => {
       plugin.fetchStatus(options);
